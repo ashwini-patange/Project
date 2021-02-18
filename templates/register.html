@@ -1,0 +1,163 @@
+{% extends "base.html" %} {%block content%}
+
+<h1 style="text-align: center;color: rgb(88, 49, 49);font-weight: bold;margin-bottom: 1em;">Registration</h1>
+{% for message in get_flashed_messages() %}
+<div class="alert alert-warning">
+    <a class="close" href="/register">×</a> {{ message }}
+</div>
+{% endfor %} {{form.hidden_tag()}}
+<p>
+    {{ form.csrf_token }}
+    <label>Name</label>{{form.name}}<br>
+    <label>Rollno.</label> {{form.rollno}}<br>
+    <label>Email</label>{{form.email(placeholder="eg.demo@gmail.com")}}<br>
+    <label>Password</label> {{form.password}}<br>
+    <div class="row">
+        <div class="col-sm-6"><label>Current Standard</label>{{form.standard(placeholder="eg.5")}}</div>
+        <div class="col-sm-6"><button onclick="enterMarks()" class="btn btn-primary" style="margin-top: 2em;"> previous standard Marks </button> </div>
+    </div>
+    <div id='display_marks'>
+        <!-- <label>Enter previous marks</label><br>
+            <input id='standard1' placeholder='Enter standard' style='width: 24%;'>
+            <input id='grade1' placeholder='Enter grade ' style='width: 24%;'>
+            <input id='remark1' placeholder='Enter Remark ' style='width: 24%;'>
+            <input id='percentage1' placeholder='Enter percentage ' style='width: 26%;'> -->
+    </div>
+</p>
+<p>already registered?<a href="/" style="text-decoration: none;"> login here</a></p><br>
+<button type="submit" class="btn btn-success" style="margin-bottom:1em;margin-top: -1.5em;" onclick="submitData()">Submit</button>
+</div>
+
+{%endblock%} {% block javascript %}
+<script>
+    var marksEnetered = false;
+
+    function validateForm(registrationObject) {
+        console.log(registrationObject);
+        // for validation of name 
+        var reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
+
+        if (!registrationObject.email.match(reg)) {
+            alert('Invalid Email Address');
+
+        }
+        if (registrationObject.name.length == 0) {
+            alert("name is required");
+            return false;
+        }
+        if (registrationObject.name.length > 15) {
+            alert("enter valid name length");
+            return false;
+        }
+        if (registrationObject.rollno.length == 0) {
+            alert("rollno is required");
+            return false;
+        }
+
+        if (registrationObject.email.length == 0) {
+            alert("email is required");
+            return false;
+        }
+        if (registrationObject.email.length > 30) {
+            alert("enter valid email length");
+            return false;
+        }
+
+        if (registrationObject.password.length == 0) {
+            alert("password is required");
+            return false;
+        }
+        if (registrationObject.password.length > 8) {
+            alert("enter valid password length ");
+            return false;
+        }
+
+        if (registrationObject.standard.length == 0) {
+            alert("standard is required");
+            return false;
+        }
+        if (registrationObject.standard <= 0 || registrationObject.standard > 11) {
+            alert("standard should be in the range of  1 - 10");
+            return false;
+        }
+
+        return true;
+    }
+
+    function checkStdRange(obj) {
+        var std = parseInt($("#standard").val());
+        var val = parseInt(obj.value);
+        if (val <= 0 || val >= std) {
+            alert("std should be in the range of 1 - " + (std - 1));
+            obj.value = "";
+        }
+    }
+
+    function submitData() {
+        var registrationObject = new Object();
+        registrationObject.name = document.getElementById("name").value;
+        registrationObject.rollno = document.getElementById("rollno").value;
+        registrationObject.email = document.getElementById("email").value;
+        registrationObject.password = document.getElementById("password").value;
+        registrationObject.standard = document.getElementById("standard").value;
+        var standard = document.getElementById("standard").value;
+        var marksDetailArray = new Array();
+        if (marksEnetered) {
+            for (var i = 1; i < standard; i++) {
+                var newObject = new Object();
+                newObject.std = i;
+                newObject.remark = $("#remark" + i).val();
+                newObject.grade = $("#grade" + i).val();
+                newObject.percentage = $("#percentage" + i).val();
+                marksDetailArray.push(newObject);
+                console.log(marksDetailArray);
+            }
+            registrationObject.marksDetails = marksDetailArray;
+        } else {
+            registrationObject.marksDetails = null;
+        }
+
+        if (validateForm(registrationObject)) {
+            var serverData = JSON.stringify(registrationObject);
+            var url = "/add_user/" + serverData + "/";
+            // database insert
+            var request = $.ajax({
+                url: url,
+                type: "POST",
+                data: "",
+
+            });
+
+            request.done(function(msg) {
+                // $("#log").html(msg);
+                window.location.href = "/";
+            });
+
+            request.fail(function(jqXHR, textStatus) {
+                alert("Request failed: " + textStatus);
+            });
+        }
+
+    }
+
+    function enterMarks() {
+        marksEnetered = true;
+        var std = parseInt($("#standard").val());
+        if (std >= 0 && std < 11) {
+            $("#display_marks").empty();
+            var value = $("#standard").val();
+            var html = ""
+            for (var i = 1; i < value; i++) {
+                html += "<h4>standard " + i + "</h4> <input id='grade" + i + "' placeholder='Enter grade ' style='width: 30%;' > <input id='remark" + i + "' placeholder='Enter Remark ' style='width: 43%;'> <input id='percentage" + i + "' placeholder='Enter percentage ' style='width: 25%;'  >";
+
+
+            }
+
+            $("#display_marks").append(html);
+        } else {
+            alert("standard should be in the range of  1 - 10");
+        }
+
+    }
+</script>
+{% endblock %}
